@@ -55,8 +55,8 @@ async def process_workqueue(workqueue: Workqueue):
                     medarbejdere=[data["ansvarlig_sagsbehandler"]["id"]],
                     forfaldsdato=datetime.datetime.today() + datetime.timedelta(days=7),
                     titel=f"Opfølgning på underskrift for vita {data['vitas_id']}",
-                    task_type=34, #Manuel opgaver - Borger. Skal måske ændres til en anden type opgave?
-                    beskrivelse=""
+                    task_type=34,  # Manuel opgaver - Borger. Skal måske ændres til en anden type opgave?
+                    beskrivelse="",
                 )
                 if not opgave:
                     raise WorkItemError("Failed to create task in Momentum")
@@ -67,6 +67,7 @@ async def process_workqueue(workqueue: Workqueue):
                 # A WorkItemError represents a soft error that indicates the item should be passed to manual processing or a business logic fault
                 logger.error(f"Error processing item: {data}. Error: {e}")
                 item.fail(str(e))
+
 
 if __name__ == "__main__":
     ats = AutomationServer.from_environment()

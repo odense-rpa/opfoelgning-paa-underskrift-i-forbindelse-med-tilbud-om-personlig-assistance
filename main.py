@@ -3,24 +3,21 @@ import logging
 import sys
 import datetime
 
-from automation_server_client import AutomationServer, Workqueue, WorkItemError, Credential, WorkItemStatus
+from automation_server_client import (
+    AutomationServer,
+    Workqueue,
+    WorkItemError,
+    Credential,
+    WorkItemStatus,
+)
 from momentum_client.manager import MomentumClientManager
 from odk_tools.tracking import Tracker
 
-
 tracker: Tracker
 momentum: MomentumClientManager
-proces_navn = "Opfølgning på underskrift i forbindelse med tilbud om personlig assistance"
-
-
-def fetch_borgere(borger_ids: list[str]) -> list[dict]:
-    """Fetch citizens by their IDs."""
-    borgere = []
-    for borger_id in borger_ids:
-        borger = momentum.borgere.hent_borger(borger_id)
-        if borger:
-            borgere.append(borger)
-    return borgere
+proces_navn = (
+    "Opfølgning på underskrift i forbindelse med tilbud om personlig assistance"
+)
 
 
 async def populate_queue(workqueue: Workqueue):
@@ -28,28 +25,19 @@ async def populate_queue(workqueue: Workqueue):
 
     logger.info("Populating queue...")
 
-    try:
-        # Example: Define the citizen IDs to process
-        # TODO: Replace with actual business logic to fetch citizens
-        borger_ids = [
-            # Add citizen IDs here
-        ]
+    vitas = momentum.vitas.hent_vitas(søgeterm="personlig assistance")
 
-        borgere = fetch_borgere(borger_ids)
+    for item in vitas:
+        vita = momentum.vitas.hent_vita(item["id"])
 
-        for borger in borgere:
+        if not vita.get("companySigner"):
             workqueue.add_item(
                 data={
-                    'borger_id': borger['id'],
-                    'cpr': borger.get('cpr'),
+                    "ansvarlig_sagsbehandler": vita["responsibleCaseworker"],
+                    "vitas_id": vita["id"],
                 },
-                reference=borger.get('cpr') or borger.get('id')
+                reference=vita["id"],
             )
-
-    except Exception as e:
-        logger.error(f"Failed to populate queue: {e}")
-        print(f"Error: {e}")
-        return
 
 
 async def process_workqueue(workqueue: Workqueue):
@@ -62,28 +50,23 @@ async def process_workqueue(workqueue: Workqueue):
             data = item.data  # Item data deserialized from json as dict
 
             try:
-                borger_id = data['borger_id']
-                borger = momentum.borgere.hent_borger(borger_id)
+                opgave = momentum.opgaver.opret_opgave(
+                    borger=None,
+                    medarbejdere=[data["ansvarlig_sagsbehandler"]["id"]],
+                    forfaldsdato=datetime.datetime.today() + datetime.timedelta(days=7),
+                    titel=f"Opfølgning på underskrift for vita {data['vitas_id']}",
+                    task_type=34, #Manuel opgaver - Borger. Skal måske ændres til en anden type opgave?
+                    beskrivelse=""
+                )
+                if not opgave:
+                    raise WorkItemError("Failed to create task in Momentum")
 
-                # TODO: Implement actual business logic for opfølgning på underskrift
-                # Example operations:
-                # - Check if citizen has signed required documents
-                # - Create follow-up tasks or markers
-                # - Track progress in Odense SQL Server
+                tracker.track_task(process_name=proces_navn)
 
-                # Uncomment when implementing:
-                # momentum.borgere.opret_markering(
-                #     borger=borger,
-                #     start_dato=datetime.datetime.now().date(),
-                #     markeringsnavn="Opfølgning på underskrift"
-                # )
-                # tracker.track_task(process_name=proces_navn)
-
-            except WorkItemError as e:
+            except Exception as e:
                 # A WorkItemError represents a soft error that indicates the item should be passed to manual processing or a business logic fault
                 logger.error(f"Error processing item: {data}. Error: {e}")
                 item.fail(str(e))
-
 
 if __name__ == "__main__":
     ats = AutomationServer.from_environment()

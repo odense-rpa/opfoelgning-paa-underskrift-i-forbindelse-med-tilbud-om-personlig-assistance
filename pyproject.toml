@@ -8,6 +8,7 @@ dependencies = [
     "automation-server-client",
     "momentum-client",
     "odk-tools",
+    "ruff>=0.15.13",
 ]
 
 [tool.uv.sources]

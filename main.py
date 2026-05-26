@@ -31,10 +31,12 @@ async def populate_queue(workqueue: Workqueue):
         vita = momentum.vitas.hent_vita(item["id"])
 
         if not vita.get("companySigner"):
+            borger = momentum.borgere.hent_borger_med_id(vita["citizenId"])
             workqueue.add_item(
                 data={
                     "ansvarlig_sagsbehandler": vita["responsibleCaseworker"],
                     "vitas_id": vita["id"],
+                    "borger_cpr" : borger["cpr"],
                 },
                 reference=vita["id"],
             )
@@ -48,10 +50,11 @@ async def process_workqueue(workqueue: Workqueue):
     for item in workqueue:
         with item:
             data = item.data  # Item data deserialized from json as dict
+            borger = momentum.borgere.hent_borger(data["borger_cpr"])
 
             try:
                 opgave = momentum.opgaver.opret_opgave(
-                    borger=None,
+                    borger=borger,
                     medarbejdere=[data["ansvarlig_sagsbehandler"]["id"]],
                     forfaldsdato=datetime.datetime.today() + datetime.timedelta(days=7),
                     titel=f"Opfølgning på underskrift for vita {data['vitas_id']}",

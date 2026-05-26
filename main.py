@@ -35,14 +35,20 @@ async def populate_queue(workqueue: Workqueue):
 
             # Check om borger allerede har opgaven
             opgaver = momentum.opgaver.hent_opgaver(borger)
-            if any(opgave for opgave in opgaver if opgave.get("title") == "Opfølgning på underskrift for vita " + vita["id"] and opgave.get("stateName") == "Planlagt"):
+            if any(
+                opgave
+                for opgave in opgaver
+                if opgave.get("title")
+                == "Opfølgning på underskrift for vita " + vita["id"]
+                and opgave.get("stateName") == "Planlagt"
+            ):
                 continue
 
             workqueue.add_item(
                 data={
                     "ansvarlig_sagsbehandler": vita["responsibleCaseworker"],
                     "vitas_id": vita["id"],
-                    "borger_cpr" : borger["cpr"],
+                    "borger_cpr": borger["cpr"],
                 },
                 reference=vita["id"],
             )

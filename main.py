@@ -32,6 +32,12 @@ async def populate_queue(workqueue: Workqueue):
 
         if not vita.get("companySigner"):
             borger = momentum.borgere.hent_borger_med_id(vita["citizenId"])
+
+            # Check om borger allerede har opgaven
+            opgaver = momentum.opgaver.hent_opgaver(borger)
+            if any(opgave for opgave in opgaver if opgave.get("title") == "Opfølgning på underskrift for vita " + vita["id"] and opgave.get("stateName") == "Planlagt"):
+                continue
+
             workqueue.add_item(
                 data={
                     "ansvarlig_sagsbehandler": vita["responsibleCaseworker"],

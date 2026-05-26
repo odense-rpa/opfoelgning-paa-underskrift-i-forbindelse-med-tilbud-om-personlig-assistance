@@ -68,7 +68,7 @@ async def process_workqueue(workqueue: Workqueue):
                 opgave = momentum.opgaver.opret_opgave(
                     borger=borger,
                     medarbejdere=[data["ansvarlig_sagsbehandler"]["id"]],
-                    forfaldsdato=datetime.datetime.today() + datetime.timedelta(days=7),
+                    forfaldsdato=datetime.datetime.today() + datetime.timedelta(days=14),
                     titel=f"Opfølgning på underskrift for vita {data['vitas_id']}",
                     task_type=34,  # Manuel opgaver - Borger. Skal måske ændres til en anden type opgave?
                     beskrivelse="",

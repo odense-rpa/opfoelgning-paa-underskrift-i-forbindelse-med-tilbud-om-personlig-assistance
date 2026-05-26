@@ -24,8 +24,14 @@ async def populate_queue(workqueue: Workqueue):
     logger = logging.getLogger(__name__)
 
     logger.info("Populating queue...")
-
-    vitas = momentum.vitas.hent_vitas(søgeterm="personlig assistance")
+    
+    filters = [
+        {
+            "fieldName": "end",
+            "values": [(datetime.date.today() + datetime.timedelta(days=1)).strftime("%Y-%m-%dT22:00:00.000Z"), None, "false"]
+        }
+    ]
+    vitas = momentum.vitas.hent_vitas(søgeterm="personlig assistance", filters=filters)
 
     for item in vitas:
         vita = momentum.vitas.hent_vita(item["id"])
@@ -39,7 +45,7 @@ async def populate_queue(workqueue: Workqueue):
                 opgave
                 for opgave in opgaver
                 if opgave.get("title")
-                == "Opfølgning på underskrift for vita " + vita["id"]
+                == "Opfølgning på underskrift i VITAS - Personlig Assistance"
                 and opgave.get("stateName") == "Planlagt"
             ):
                 continue
@@ -69,9 +75,9 @@ async def process_workqueue(workqueue: Workqueue):
                     borger=borger,
                     medarbejdere=[data["ansvarlig_sagsbehandler"]["id"]],
                     forfaldsdato=datetime.datetime.today() + datetime.timedelta(days=14),
-                    titel=f"Opfølgning på underskrift for vita {data['vitas_id']}",
+                    titel="Opfølgning på underskrift i VITAS - Personlig Assistance",
                     task_type=34,  # Manuel opgaver - Borger. Skal måske ændres til en anden type opgave?
-                    beskrivelse="",
+                    beskrivelse="Sikrer underskrift fra Virksomheden på bevillingen af personlige assistance i VITAS",
                 )
                 if not opgave:
                     raise WorkItemError("Failed to create task in Momentum")

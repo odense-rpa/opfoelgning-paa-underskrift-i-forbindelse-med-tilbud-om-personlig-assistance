@@ -6,7 +6,7 @@ Automatisering der følger op på manglende underskrifter i forbindelse med tilb
 
 1. **Henter vitas** fra Momentum med søgetermen _"personlig assistance"_
 2. **Filtrerer** på vitas uden en virksomhedsunderskriver (`companySigner`)
-3. **Opretter en opgave** i Momentum til den ansvarlige sagsbehandler med en forfaldsdato 7 dage frem, der beder om opfølgning på underskriften
+3. **Opretter en opgave** i Momentum til den ansvarlige sagsbehandler med en forfaldsdato 14 dage frem, der beder om opfølgning på underskriften
 4. **Registrerer aktivitet** i Odense Kommunes tracking-system
 
 ## Forudsætninger

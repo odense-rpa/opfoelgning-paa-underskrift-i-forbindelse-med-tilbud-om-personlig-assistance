@@ -25,6 +25,7 @@ async def populate_queue(workqueue: Workqueue):
 
     logger.info("Populating queue...")
     
+    # Henter alle VITAS sager, der slutter efter dags dato.
     filters = [
         {
             "fieldName": "end",
@@ -76,7 +77,7 @@ async def process_workqueue(workqueue: Workqueue):
                     medarbejdere=[data["ansvarlig_sagsbehandler"]["id"]],
                     forfaldsdato=datetime.datetime.today() + datetime.timedelta(days=14),
                     titel="Opfølgning på underskrift i VITAS - Personlig Assistance",
-                    task_type=34,  # Manuel opgaver - Borger. Skal måske ændres til en anden type opgave?
+                    task_type=34,
                     beskrivelse="Sikrer underskrift fra Virksomheden på bevillingen af personlige assistance i VITAS",
                 )
                 if not opgave:

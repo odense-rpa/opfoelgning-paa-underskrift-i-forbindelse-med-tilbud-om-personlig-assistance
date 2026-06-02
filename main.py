@@ -32,13 +32,15 @@ async def populate_queue(workqueue: Workqueue):
             "values": [(datetime.date.today() + datetime.timedelta(days=1)).strftime("%Y-%m-%dT22:00:00.000Z"), None, "false"]
         }
     ]
-    vitas = momentum.vitas.hent_vitas(søgeterm="personlig assistance", filters=filters)
+    alle_vitas = momentum.vitas.hent_vitas(søgeterm="personlig assistance", filters=filters)
 
-    for item in vitas:
-        vita = momentum.vitas.hent_vita(item["id"])
+    for item in alle_vitas:
+        vitas = momentum.vitas.hent_vita(item["id"])
+        if vitas.get("statusCode") != "JOB_ALLOCATION_STATUS_GODKENDT_AF_BORGER": # svarer til "Borger har godkendt bevilling eller vurdering" i UI
+            continue
 
-        if not vita.get("companySigner"):
-            borger = momentum.borgere.hent_borger_med_id(vita["citizenId"])
+        if not vitas.get("companySigner"):
+            borger = momentum.borgere.hent_borger_med_id(vitas["citizenId"])
 
             # Check om borger allerede har opgaven
             opgaver = momentum.opgaver.hent_opgaver(borger)
@@ -53,11 +55,11 @@ async def populate_queue(workqueue: Workqueue):
 
             workqueue.add_item(
                 data={
-                    "ansvarlig_sagsbehandler": vita["responsibleCaseworker"],
-                    "vitas_id": vita["id"],
+                    "ansvarlig_sagsbehandler": vitas["responsibleCaseworker"],
+                    "vitas_id": vitas["id"],
                     "borger_cpr": borger["cpr"],
                 },
-                reference=vita["id"],
+                reference=vitas["id"],
             )
 
 
